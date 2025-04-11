@@ -1,20 +1,94 @@
 main:
-  params: [input]
   steps:
     - init:
         assign:
-          - function_name: "wbr-combine"
+          - function_name: "function-wbr"
           - folder_id: "11"
-          - region: "us-central1"
-          - project_id: "kwhitlow-bi-prod"
-    - call_function:
+          - region: ${sys.get_env("GOOGLE_CLOUD_LOCATION")}
+          - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          - timestamp: ${time.format(sys.now())}
+          - folder_name: ${text.replace_all(text.replace_all(timestamp, "[^A-Za-z0-9]", "_"), "_+", "_")}
+          - function_url: ${"https://" + region + "-" + project_id + ".cloudfunctions.net/" + function_name}
+          - render_task_ids: []
+
+    # Step 1: Get all folder dashboards
+    - get_dashboards:
         call: http.post
         args:
-          url: ${"https://" + region + "-" + project_id + ".cloudfunctions.net/" + function_name + "/" + operation}
-          body: ${payload}
+          url: ${function_url}
+          query:
+            do: "folder_dashboards"
+          body:
+            folder_id: ${folder_id}
           auth:
-            type: OAuth2
-        result: function_result
+            type: OIDC
+        result: dashboard_response
+
+    # Step 2: Create render tasks for each dashboard in parallel
+    - create_render_tasks:
+        parallel:
+          shared: [render_task_ids]
+          for:
+            value: dashboard_id
+            in: ${dashboard_response.body.dashboard_ids}
+            steps:
+              - create_render_task:
+                  call: http.post
+                  args:
+                    url: ${function_url}
+                    query:
+                      do: "render_task"
+                    body:
+                      dashboard_id: ${dashboard_id}
+                    auth:
+                      type: OIDC
+                  result: render_task_result
+
+              # Check render task status and wait if needed
+              - check_task_status:
+                  steps:
+                    - check_render_task:
+                        call: http.post
+                        args:
+                          url: ${function_url}
+                          query:
+                            do: "check_render_task"
+                          body:
+                            render_task_id: ${render_task_result.body.render_task_id}
+                          auth:
+                            type: OIDC
+                        result: task_status
+
+                    - wait_if_needed:
+                        switch:
+                          - condition: ${task_status.body.finished}
+                            next: add_task_id
+                          - condition: ${true}
+                            next: wait
+                    - wait:
+                        call: sys.sleep
+                        args:
+                          seconds: 60
+                        next: check_render_task
+
+              # Add the render task ID to our collection
+              - add_task_id:
+                  assign:
+                    - render_task_ids: ${list.concat(render_task_ids, [render_task_result.body.render_task_id])}
+
+    # Step 5: Combine render tasks
+    - combine_tasks:
+        call: http.post
+        args:
+          url: ${function_url}
+          query:
+            do: "combine_render_tasks"
+          body:
+            render_task_ids: ${render_task_ids}
+            folder_name: ${folder_name}
+          auth:
+            type: OIDC
+        result: combined_result
 
     - return_result:
-        return: ${function_result}
+        return: ${combined_result}

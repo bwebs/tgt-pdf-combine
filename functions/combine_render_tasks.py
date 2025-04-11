@@ -18,9 +18,11 @@ def get_and_combine_render_tasks(request: Request) -> dict:
     Returns:
         A dictionary containing the status and the combined PDF's blob name or an error message
     """
+
     request_json = request.get_json(silent=True)
     if not request_json or "render_task_ids" not in request_json:
         return "Please provide render_task_ids in the request body", 400
+
     folder_name = request_json["folder_name"]
     if not folder_name:
         return "Please provide folder_name in the request body", 400
@@ -46,6 +48,8 @@ def get_and_combine_render_tasks(request: Request) -> dict:
 
             # Get the render task results
             results = sdk.render_task_results(task_id)
+            if results is None:
+                return f"Render task {task_id} has no results", 400
 
             # Create individual PDF blob
             dashboard_id = task.dashboard_id

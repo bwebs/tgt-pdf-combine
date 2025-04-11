@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "functions-framework>=3.8.2",
+    "google-cloud-storage>=3.1.0",
     "looker-sdk>=25.4.0",
     "pypdf2>=3.0.1",
     "pyyaml>=6.0.2",

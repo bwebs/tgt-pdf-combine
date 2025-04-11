@@ -1,4 +1,5 @@
 from looker_sdk import init40
+from looker_sdk.sdk.api40 import models
 from werkzeug import Request
 
 sdk = init40()
@@ -26,9 +27,9 @@ def create_render_task(request: Request) -> dict:
             height=1080,
             pdf_paper_size="letter",
             pdf_landscape=True,
-            long_dash_line=True,
+            long_tables=True,
+            body=models.CreateDashboardRenderTask(dashboard_style="tiled"),
         )
-
         return {"status": "success", "render_task_id": render_task.id}
     except Exception as e:
         return f"Error creating render task: {str(e)}", 500

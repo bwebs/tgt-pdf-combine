@@ -56,7 +56,7 @@ def run_dashboard_scheduled_plan(request: Request) -> dict:
         )
 
         # Run the scheduled plan
-        result = sdk.scheduled_plan_run_once(scheduled_plan.id)
+        _result = sdk.scheduled_plan_run_once(scheduled_plan.id)
         return {"status": "success", "scheduled_plan_id": scheduled_plan.id}
     except Exception as e:
         return f"Error running scheduled plan: {str(e)}", 500

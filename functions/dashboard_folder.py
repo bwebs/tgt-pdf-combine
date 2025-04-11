@@ -1,4 +1,4 @@
-from looker_sdk import init40, models
+from looker_sdk import init40
 from werkzeug import Request
 
 sdk = init40()
@@ -13,9 +13,7 @@ def get_dashboard_ids_from_folder(request: Request) -> list:
 
     try:
         # Search for dashboards in the specified folder
-        dashboards = sdk.search_dashboards(
-            models.RequestSearchDashboards(folder_id=request_json["folder_id"])
-        )
+        dashboards = sdk.search_dashboards(folder_id=request_json["folder_id"])
 
     except Exception as e:
         return f"Error retrieving dashboards: {str(e)}", 500

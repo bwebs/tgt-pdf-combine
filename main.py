@@ -1,7 +1,7 @@
 from functions_framework import http
 from werkzeug import Request
 
-from functions.check_render_tasks import check_render_tasks
+from functions.check_render_task import check_render_task
 from functions.combine_pdfs import combine_pdfs
 from functions.combine_render_tasks import get_and_combine_render_tasks
 from functions.create_render_task import create_render_task
@@ -22,21 +22,23 @@ def main(request: Request):
         Response object using `make_response`
         <https://flask.palletsprojects.com/en/1.1.x/api/#flask.make_response>.
     """
-    if request.path == "/":
-        return NotImplemented, 501
-    if request.path == "/folder_dashboards":
+    do = request.args.get("do", "")
+
+    if do == "":
+        return {"message": "Hello, World!"}
+    if do == "folder_dashboards":
         return get_dashboard_ids_from_folder(request)
-    if request.path == "/dashboards":
+    if do == "dashboards":
         return run_dashboard_scheduled_plan(request)
-    if request.path == "/check_folder":
+    if do == "check_folder":
         return list_files_in_folder(request)
-    if request.path == "/combine_pdfs":
+    if do == "combine_pdfs":
         return combine_pdfs(request)
-    if request.path == "/dashboard_lookml":
+    if do == "dashboard_lookml":
         return get_and_combine_dashboard_lookml(request)
-    if request.path == "/render_task":
+    if do == "render_task":
         return create_render_task(request)
-    if request.path == "/check_render_tasks":
-        return check_render_tasks(request)
-    if request.path == "/combine_render_tasks":
+    if do == "check_render_task":
+        return check_render_task(request)
+    if do == "combine_render_tasks":
         return get_and_combine_render_tasks(request)
