@@ -1,0 +1,24 @@
+main:
+  params: [input]
+  steps:
+    - init:
+        assign:
+          - function_name: "wbr-combine"
+          - folder_id: "11"
+          - region: ${sys.get_env("GOOGLE_CLOUD_LOCATION")}
+          - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          - timestamp: ${time.format(sys.now())}
+          - folder_name: ${text.replace_all(text.replace_all(timestamp, "[^A-Za-z0-9]", "_"), "_+", "_")}
+
+    - call_function:
+        call: http.post
+        args:
+          url: ${"https://" + region + "-" + project_id + ".cloudfunctions.net/" + function_name + "/check_folder"}
+          body:
+            folder_name: ${folder_name}
+          auth:
+            type: OAuth2
+        result: function_result
+
+    - return_result:
+        return: ${function_result}

@@ -1,0 +1,20 @@
+main:
+  params: [input]
+  steps:
+    - init:
+        assign:
+          - function_name: "wbr-combine"
+          - folder_id: "11"
+          - region: "us-central1"
+          - project_id: "kwhitlow-bi-prod"
+    - call_function:
+        call: http.post
+        args:
+          url: ${"https://" + region + "-" + project_id + ".cloudfunctions.net/" + function_name + "/" + operation}
+          body: ${payload}
+          auth:
+            type: OAuth2
+        result: function_result
+
+    - return_result:
+        return: ${function_result}
