@@ -1,7 +1,11 @@
+from datetime import datetime, timedelta, timezone
+
 from looker_sdk import init40
 from werkzeug import Request
 
 sdk = init40()
+
+TIMEOUT_MINUTES = 30
 
 
 def check_render_task(request: Request) -> dict:
@@ -20,6 +24,15 @@ def check_render_task(request: Request) -> dict:
 
     try:
         task = sdk.render_task(render_task_id)
+
+        if task.created_at and (
+            datetime.fromisoformat(task.created_at)
+            < (datetime.now(timezone.utc) - timedelta(minutes=TIMEOUT_MINUTES))
+        ):
+            return (
+                f"Render task {render_task_id} timed out after {TIMEOUT_MINUTES} minutes",
+                400,
+            )
 
         task_details = {
             "render_task_id": render_task_id,

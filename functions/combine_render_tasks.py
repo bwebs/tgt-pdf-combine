@@ -40,7 +40,7 @@ def get_and_combine_render_tasks(request: Request) -> dict:
             # Get the render task
             task = sdk.render_task(task_id)
 
-            if task.status != "success":
+            if task.status != "success":  # other option failure
                 return (
                     f"Render task {task_id} is not complete. Status: {task.status}",
                     400,
