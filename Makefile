@@ -45,3 +45,6 @@ execute-workflow-wbr:
 
 dev:
 	uv run --env-file=.env functions-framework --target=main --port=8081 --debug
+
+deploy-run:
+	make deploy-function && make deploy-workflow-wbr && make execute-workflow-wbr

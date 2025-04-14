@@ -1,10 +1,13 @@
 import io
 import os
+from datetime import datetime, timezone
 
 from google.cloud import storage
 from looker_sdk import init40
 from PyPDF2 import PdfMerger
 from werkzeug import Request
+
+from functions.handle_artifacts import update_run_artifact
 
 sdk = init40()
 
@@ -20,6 +23,11 @@ def get_and_combine_render_tasks(request: Request) -> dict:
     """
 
     request_json = request.get_json(silent=True)
+
+    run_id = request_json["run_id"]
+    if not run_id:
+        return "Please provide run_id in the request body", 400
+
     if not request_json or "render_task_ids" not in request_json:
         return "Please provide render_task_ids in the request body", 400
 
@@ -41,15 +49,22 @@ def get_and_combine_render_tasks(request: Request) -> dict:
             task = sdk.render_task(task_id)
 
             if task.status != "success":  # other option failure
-                return (
-                    f"Render task {task_id} is not complete. Status: {task.status}",
-                    400,
+                update_run_artifact(
+                    run_id=run_id,
+                    errors=[
+                        f"Render task {task_id} for dashboard {task.dashboard_id} is not complete. Status: {task.status}"
+                    ],
                 )
 
             # Get the render task results
             results = sdk.render_task_results(task_id)
             if results is None:
-                return f"Render task {task_id} has no results", 400
+                update_run_artifact(
+                    run_id=run_id,
+                    errors=[
+                        f"Render task {task_id} for dashboard {task.dashboard_id} has no results"
+                    ],
+                )
 
             # Create individual PDF blob
             dashboard_id = task.dashboard_id
@@ -75,6 +90,13 @@ def get_and_combine_render_tasks(request: Request) -> dict:
         # Upload the combined PDF
         combined_blob.upload_from_file(output_buffer, content_type="application/pdf")
 
+        update_run_artifact(
+            run_id=run_id,
+            combined_pdf=combined_blob_name,
+            individual_pdfs=individual_pdfs,
+            number_of_pdfs_combined=len(individual_pdfs),
+            finished_at=datetime.now(timezone.utc),
+        )
         return {
             "status": "success",
             "combined_pdf": combined_blob_name,

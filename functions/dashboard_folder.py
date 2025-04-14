@@ -1,5 +1,9 @@
+from datetime import datetime, timezone
+
 from looker_sdk import init40
 from werkzeug import Request
+
+from functions.handle_artifacts import update_run_artifact
 
 sdk = init40()
 
@@ -8,16 +12,28 @@ def get_dashboard_ids_from_folder(request: Request) -> list:
     """Get all dashboard IDs from a specific Looker folder."""
 
     request_json = request.get_json(silent=True)
-    if not request_json or "folder_id" not in request_json:
+    folder_id = request_json["folder_id"]
+    if not folder_id:
         return "Please provide a folder_id in the request body", 400
+    run_id = request_json["run_id"]
+    if not run_id:
+        return "Please provide a run_id in the request body", 400
 
     try:
         # Search for dashboards in the specified folder
-        dashboards = sdk.search_dashboards(folder_id=request_json["folder_id"])
+        dashboards = sdk.search_dashboards(folder_id=folder_id)
 
     except Exception as e:
+        update_run_artifact(
+            run_id=run_id,
+            folder_id=folder_id,
+            dashboard_ids=[],
+            errors=[str(e)],
+            finished_at=datetime.now(timezone.utc),
+        )
         return f"Error retrieving dashboards: {str(e)}", 500
 
     # Extract dashboard IDs
     dashboard_ids = [dashboard.id for dashboard in dashboards]
+    update_run_artifact(run_id=run_id, folder_id=folder_id, dashboard_ids=dashboard_ids)
     return {"dashboard_ids": dashboard_ids, "dashboard_count": len(dashboard_ids)}
