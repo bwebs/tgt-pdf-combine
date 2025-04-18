@@ -18,6 +18,12 @@ import { App } from "./App";
 
 window.addEventListener("DOMContentLoaded", (_) => {
   const root = document.createElement("div");
+  root.id = "root";
   document.body.appendChild(root);
+  const style = document.createElement("style");
+  style.innerHTML = `
+  html, body, #root { margin: 0px; height: 100%; width: 100%; }
+  `;
+  document.head.appendChild(style);
   ReactDOM.render(<App />, root);
 });

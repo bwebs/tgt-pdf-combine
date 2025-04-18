@@ -4,8 +4,20 @@ import {
 } from "@looker/extension-sdk-react";
 import React, { Suspense, useContext, useState } from "react";
 
-import { ComponentsProvider } from "@looker/components";
+import { Box, ComponentsProvider } from "@looker/components";
+import styled from "styled-components";
 import Main from "./Main";
+
+const StyledBox = styled(Box)`
+  height: 100%;
+  width: 100%;
+  & > div {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+`;
 
 export const App: React.FC = () => {
   const [route, setRoute] = useState("");
@@ -18,11 +30,13 @@ export const App: React.FC = () => {
 
   return (
     <Suspense fallback={<></>}>
-      <ComponentsProvider>
-        <ExtensionProvider onRouteChange={onRouteChange}>
-          <Main route={route} routeState={routeState} />
-        </ExtensionProvider>
-      </ComponentsProvider>
+      <StyledBox>
+        <ComponentsProvider>
+          <ExtensionProvider onRouteChange={onRouteChange}>
+            <Main route={route} routeState={routeState} />
+          </ExtensionProvider>
+        </ComponentsProvider>
+      </StyledBox>
     </Suspense>
   );
 };

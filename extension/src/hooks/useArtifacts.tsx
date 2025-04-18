@@ -1,5 +1,6 @@
 import { useCore40SDK } from "../App";
 
+import orderBy from "lodash/orderBy";
 import useSWR from "swr";
 import { RunArtifact, RunDashboardArtifact } from "../types";
 import { swr_sdk_fetcher } from "../utils";
@@ -11,26 +12,33 @@ export const useRunArtifacts = () => {
     [sdk, "search_artifacts", { namespace: "combine-dashboards-tool-runs" }],
     swr_sdk_fetcher,
     {
-      refreshInterval: 2000,
+      refreshInterval: 10000,
     }
   );
 
   return {
     ...search_artifacts,
-    data: search_artifacts.data?.map((artifact) => {
-      try {
-        const value = JSON.parse(artifact.value);
-        return {
-          ...artifact,
-          ...value,
-        };
-      } catch (error) {
-        console.error(error);
-        return artifact;
+    data: orderBy(search_artifacts.data, ["updated_at"], ["desc"]).map(
+      (artifact) => {
+        try {
+          const value = JSON.parse(artifact.value);
+          return {
+            ...artifact,
+            ...value,
+          };
+        } catch (error) {
+          console.error(error);
+          return artifact;
+        }
       }
-    }),
+    ),
     refresh: () => {
       search_artifacts.mutate(search_artifacts.data);
+    },
+    delayedRefresh: () => {
+      setTimeout(() => {
+        search_artifacts.mutate(search_artifacts.data);
+      }, 3000);
     },
   };
 };
@@ -50,7 +58,7 @@ export const useDashboardArtifacts = (run_id: string | null | undefined) => {
       : null,
     swr_sdk_fetcher,
     {
-      refreshInterval: 2000,
+      refreshInterval: 10000,
     }
   );
 
@@ -70,6 +78,11 @@ export const useDashboardArtifacts = (run_id: string | null | undefined) => {
     }),
     refresh: () => {
       search_dashboard_artifacts.mutate(search_dashboard_artifacts.data);
+    },
+    delayedRefresh: () => {
+      setTimeout(() => {
+        search_dashboard_artifacts.mutate(search_dashboard_artifacts.data);
+      }, 1000);
     },
   };
 };

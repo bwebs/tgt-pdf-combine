@@ -11,7 +11,7 @@ interface RunArtifact extends Omit<IArtifact, "created_at"> {
   dashboard_ids?: string[];
   errors?: string[];
   finished_at?: string;
-  status?: "running";
+  status?: "running" | "finished" | "failed";
   [key: string]: any;
 }
 

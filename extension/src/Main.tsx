@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ComponentsProvider } from "@looker/components";
 import React from "react";
 import { Route, Switch } from "react-router-dom";
+import Config from "./Config";
 import { RunList } from "./Runlist";
 import { useRunArtifacts } from "./hooks/useArtifacts";
 
@@ -25,20 +25,22 @@ const Main: React.FC<{
   route: string;
   routeState: any;
 }> = ({ route, routeState }) => {
-  const { data: run_artifacts, loading: run_artifacts_loading } =
-    useRunArtifacts();
+  const _cache = useRunArtifacts();
 
   return (
-    <ComponentsProvider>
+    <>
       {/* @ts-ignore */}
       <Switch>
         {/* @ts-ignore */}
-        {/* @ts-ignore */}
-        <Route path="/">
+        <Route exact path="/">
           <RunList />
         </Route>
+        {/* @ts-ignore */}
+        <Route path="/config">
+          <Config />
+        </Route>
       </Switch>
-    </ComponentsProvider>
+    </>
   );
 };
 

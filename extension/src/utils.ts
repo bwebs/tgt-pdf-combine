@@ -30,7 +30,7 @@ export const getSignedUrl = async ({
   };
   const url = server_url ?? SERVER_URL;
   const params = new URLSearchParams(query);
-  console.log(sdk.lookerHostData);
+
   const response = await sdk.serverProxy(`${url}/?${params.toString()}`, {
     method: "POST",
     headers: {

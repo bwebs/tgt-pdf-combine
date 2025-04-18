@@ -40,14 +40,17 @@ def update_run_artifact(
         body["folder_id"] = folder_id
     if dashboard_ids:
         body["dashboard_ids"] = dashboard_ids
-    if errors:
-        body["errors"] = [*previous.errors, *errors] if previous.errors else errors
     if finished_at:
         body["finished_at"] = finished_at.isoformat()
+        body["status"] = "finished"
     if not finished_at:
         body["status"] = "running"
     if kwargs:
         body.update(kwargs)
+    if errors:
+        body["errors"] = [*previous.errors, *errors] if previous.errors else errors
+    if "errors" in body:
+        body["status"] = "error"
 
     artifact = UpdateArtifact(
         key=key,

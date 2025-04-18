@@ -9,6 +9,8 @@ from werkzeug import Request
 
 def get_signed_url(request: Request):
     request_json = request.get_json(silent=True)
+    if not request_json:
+        return "Please provide a request body", 400
     run_id = request_json.get("run_id")
     dashboard_id = request_json.get("dashboard_id")
 

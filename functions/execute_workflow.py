@@ -25,6 +25,8 @@ def execute_workflow(request: Request) -> Execution:
     if not folder_id:
         return "folder_id is required", 400
 
+    os.environ["GOOGLE_CLOUD_PROJECT_ID"] = "kwhitlow-bi-prod"
+
     # Get the project ID from environment variables
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
     if not project_id:
@@ -50,12 +52,17 @@ def execute_workflow(request: Request) -> Execution:
         args["access_token"] = request.environ.get("access_token")
     if request.environ.get("looker_sdk_base_url"):
         args["looker_sdk_base_url"] = request.environ.get("looker_sdk_base_url")
-    # Create the execution with the folder_id as an argument
-    execution = executions_client.create_execution(
-        request={
-            "parent": workflow_path,
-            "execution": {"argument": json.dumps(args)},
-        }
-    )
 
-    return execution
+    try:
+        # Create the execution with the folder_id as an argument
+        execution = executions_client.create_execution(
+            request={
+                "parent": workflow_path,
+                "execution": {"argument": json.dumps(args)},
+            }
+        )
+    except Exception as e:
+        print(e)
+        return "Error creating execution", 500
+
+    return dict(success=True)
