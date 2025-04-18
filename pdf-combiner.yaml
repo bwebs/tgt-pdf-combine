@@ -11,6 +11,9 @@ main:
           - run_id: ${folder_name}
           - function_url: ${"https://" + region + "-" + project_id + ".cloudfunctions.net/" + function_name}
           - render_task_ids: []
+          - access_token: ${default(map.get(input, "access_token"), "")}
+          - looker_sdk_base_url: ${default(map.get(input, "looker_sdk_base_url"), "")}
+          - looker_sdk_base_url: ${default(map.get(input, "looker_sdk_base_url"), "")}
     # Step 0: Get PDF_COMBINER_SECRET
     - get_auth:
         steps:
@@ -30,8 +33,8 @@ main:
         args:
           headers:
             Authorization: ${authorization}
-            x-access-token: ${input.access_token}
-            x-lookersdk-base-url: ${input.looker_sdk_base_url}
+            x-access-token: ${access_token}
+            x-lookersdk-base-url: ${looker_sdk_base_url}
           url: ${function_url}
           query:
             do: "folder_dashboards"
@@ -61,8 +64,8 @@ main:
                       input: ${input}
                     headers:
                       Authorization: ${authorization}
-                      x-access-token: ${input.access_token}
-                      x-lookersdk-base-url: ${input.looker_sdk_base_url}
+                      x-access-token: ${access_token}
+                      x-lookersdk-base-url: ${looker_sdk_base_url}
                   result: render_task_result
 
               # Check render task status and wait if needed
@@ -81,8 +84,8 @@ main:
                             input: ${input}
                           headers:
                             Authorization: ${authorization}
-                            x-access-token: ${input.access_token}
-                            x-lookersdk-base-url: ${input.looker_sdk_base_url}
+                            x-access-token: ${access_token}
+                            x-lookersdk-base-url: ${looker_sdk_base_url}
                         result: task_status
 
                     - wait_if_needed:
@@ -116,8 +119,8 @@ main:
             input: ${input}
           headers:
             Authorization: ${authorization}
-            x-access-token: ${input.access_token}
-            x-lookersdk-base-url: ${input.looker_sdk_base_url}
+            x-access-token: ${access_token}
+            x-lookersdk-base-url: ${looker_sdk_base_url}
         result: combined_result
 
     - return_result:
