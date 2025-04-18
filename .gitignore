@@ -11,3 +11,4 @@ wheels/
 
 # Local files
 .env
+node_modules

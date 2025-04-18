@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "lib": ["dom", "es2015"],
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "paths": {
+      "@lkrdev/use-extension-hooks": ["../use-extension-hooks/src"]
+    }
+  },
+  "exclude": ["node_modules"]
+}
