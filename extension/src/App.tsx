@@ -28,13 +28,11 @@ export const App: React.FC = () => {
 };
 
 export const useExtensionContext = () => {
-  const { core40SDK } = useContext(ExtensionContext);
-  if (!core40SDK) {
+  const extension = useContext(ExtensionContext);
+  if (!extension) {
     throw new Error("ExtensionContext not found");
   }
-  return {
-    core40SDK,
-  };
+  return extension;
 };
 
 export const useCore40SDK = () => {

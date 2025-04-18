@@ -1,5 +1,6 @@
 import {
   Icon,
+  IconButton,
   ListItem,
   Space,
   SpaceVertical,
@@ -9,6 +10,7 @@ import {
 import { DateTime } from "luxon";
 import React from "react";
 import styled from "styled-components";
+import { useExtensionContext } from "../App";
 import { useSearchParams } from "../hooks/useSearchParams";
 import { RunArtifact } from "../types";
 import DashboardBadge from "./DashboardBadge";
@@ -66,6 +68,21 @@ export const RunListItem: React.FC<RunListItemProps> = ({ run }) => {
   const selectedRunId = search_params.get("run_id");
   const has_error = Boolean(run.errors?.length);
   const is_selected = selectedRunId === run.run_id;
+  const { extensionSDK } = useExtensionContext();
+
+  const handleShareClick = async () => {
+    const response = await extensionSDK.serverProxy(`/?do=get_signed_url`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorizaiton: extensionSDK.createSecretKeyTag("extension_secret_key"),
+      },
+      body: {},
+    });
+    if (!response.ok) {
+      throw new Error("Failed to authorize");
+    }
+  };
 
   return (
     <StyledListItem
@@ -97,6 +114,14 @@ export const RunListItem: React.FC<RunListItemProps> = ({ run }) => {
                 {relativeTime}
               </TimeSpan>
             </Tooltip>
+            <IconButton
+              icon="Share"
+              label="Share"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                handleShareClick();
+              }}
+            />
           </Space>
           {run.dashboard_ids && run.dashboard_ids.length > 0 && (
             <>

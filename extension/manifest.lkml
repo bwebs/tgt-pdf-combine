@@ -10,7 +10,8 @@ application: lkr-pdf-combine-ui {
       "artifact",
       "search_artifacts",
       "artifact_usage",
-      "dashboard"
+      "dashboard",
+      "login_user"
     ]
   }
 }

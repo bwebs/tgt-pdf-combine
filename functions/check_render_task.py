@@ -1,11 +1,9 @@
 from datetime import datetime, timedelta, timezone
 
-from looker_sdk import init40
 from werkzeug import Request
 
 from functions.handle_artifacts import update_run_dashboard_artifact
-
-sdk = init40()
+from functions.utils import get_sdk
 
 TIMEOUT_MINUTES = 30
 
@@ -20,19 +18,23 @@ def check_render_task(request: Request) -> dict:
         A dictionary containing the status, success count, and details of each task
     """
     request_json = request.get_json(silent=True)
-    render_task_id = request_json["render_task_id"]
+    render_task_id = request_json.get("render_task_id")
     if not render_task_id:
         return "Please provide render_task_id in the request body", 400
 
-    dashboard_id = request_json["dashboard_id"]
+    dashboard_id = request_json.get("dashboard_id")
     if not dashboard_id:
         return "Please provide dashboard_id in the request body", 400
 
-    run_id = request_json["run_id"]
+    run_id = request_json.get("run_id")
     if not run_id:
         return "Please provide run_id in the request body", 400
 
     try:
+        sdk = get_sdk(
+            access_token=request.environ.get("access_token"),
+            looker_sdk_base_url=request.environ.get("looker_sdk_base_url"),
+        )
         task = sdk.render_task(render_task_id)
 
         if task.created_at and (
@@ -40,6 +42,7 @@ def check_render_task(request: Request) -> dict:
             < (datetime.now(timezone.utc) - timedelta(minutes=TIMEOUT_MINUTES))
         ):
             update_run_dashboard_artifact(
+                request=request,
                 dashboard_id=dashboard_id,
                 run_id=run_id,
                 error=f"Render task {render_task_id} timed out after {TIMEOUT_MINUTES} minutes",
@@ -59,6 +62,7 @@ def check_render_task(request: Request) -> dict:
         is_success = task.status == "success"
 
         update_run_dashboard_artifact(
+            request=request,
             dashboard_id=dashboard_id,
             run_id=run_id,
             task=task,
@@ -73,6 +77,7 @@ def check_render_task(request: Request) -> dict:
         }
     except Exception as e:
         update_run_dashboard_artifact(
+            request=request,
             dashboard_id=dashboard_id,
             run_id=run_id,
             error=str(e),

@@ -2,10 +2,9 @@ import os
 
 import yaml
 from google.cloud import storage
-from looker_sdk import init40
 from werkzeug import Request
 
-sdk = init40()
+from functions.utils import get_sdk
 
 
 def get_and_combine_dashboard_lookml(request: Request) -> dict:
@@ -17,6 +16,10 @@ def get_and_combine_dashboard_lookml(request: Request) -> dict:
     Returns:
         A dictionary containing the status and the combined YAML's blob name or an error message
     """
+    sdk = get_sdk(
+        access_token=request.environ.get("access_token"),
+        looker_sdk_base_url=request.environ.get("looker_sdk_base_url"),
+    )
     request_json = request.get_json(silent=True)
     if not request_json or "dashboard_ids" not in request_json:
         return "Please provide a list of dashboard_ids in the request body", 400
@@ -35,7 +38,7 @@ def get_and_combine_dashboard_lookml(request: Request) -> dict:
         # Initialize with the hardcoded header
         combined_lookml = {
             "dashboard": "sample_1_ecommerce_business_pulse__basic",
-            "title": "WBR Lookml Test",
+            "title": "PDF Combiner Lookml Test",
             "layout": "newspaper",
             "preferred_viewer": "dashboards-next",
             "description": "",
@@ -43,7 +46,7 @@ def get_and_combine_dashboard_lookml(request: Request) -> dict:
             "filters": [],
         }
 
-        for dashboard_id in request_json["dashboard_ids"]:
+        for dashboard_id in request_json.get("dashboard_ids", []):
             # Get the LookML for each dashboard
             lookml = sdk.dashboard_lookml(dashboard_id)
 
@@ -76,7 +79,9 @@ def get_and_combine_dashboard_lookml(request: Request) -> dict:
         return {
             "status": "success",
             "combined_lookml_file": output_filename,
-            "number_of_dashboards_processed": len(request_json["dashboard_ids"]),
+            "number_of_dashboards_processed": len(
+                request_json.get("dashboard_ids", [])
+            ),
         }
 
     except Exception as e:

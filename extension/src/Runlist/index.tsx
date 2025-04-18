@@ -8,13 +8,12 @@ interface RunListProps {}
 
 export const RunList: React.FC<RunListProps> = () => {
   const { data: run_artifacts, isLoading } = useRunArtifacts();
-
   if (isLoading) {
     return <div>Loading...</div>;
   } else {
     return (
       <SpaceVertical>
-        <Heading as="h3">Run Artifacts</Heading>
+        <Heading as="h3">PDF Combiner</Heading>
         <Space>
           <Box flex="1" minWidth="300px">
             <List>
@@ -23,7 +22,7 @@ export const RunList: React.FC<RunListProps> = () => {
               ))}
             </List>
           </Box>
-          <Box flex="2" border="1px solid #ccc" p="large">
+          <Box flex="2" border="1px solid #ccc" alignSelf="flex-start">
             <SelectedRun />
           </Box>
         </Space>

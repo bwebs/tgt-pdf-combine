@@ -3,6 +3,7 @@ import os
 from functions_framework import http
 from werkzeug import Request
 
+from functions.check import check
 from functions.check_render_task import check_render_task
 from functions.combine_render_tasks import get_and_combine_render_tasks
 from functions.create_render_task import create_render_task
@@ -57,5 +58,7 @@ def main(request: Request):
         return get_and_combine_render_tasks(request)
     elif do == "get_signed_url":
         return get_signed_url(request)
+    elif do == "check":
+        return check(request)
     else:
         return {"message": "Invalid request"}, 400
