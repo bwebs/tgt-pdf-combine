@@ -1,16 +1,17 @@
 import json
 from typing import List
 
-from looker_sdk import init40
 from looker_sdk.sdk.api40.models import RenderTask, UpdateArtifact
+from werkzeug import Request
+
+from functions.utils import get_sdk
 
 RUN_NAMESPACE = "combine-dashboards-tool-runs"
 DASHBOARD_NAMESPACE = "combine-dashboards-tool-run-dashboards"
 
-sdk = init40()
-
 
 def update_run_artifact(
+    request: Request,
     run_id: str,
     folder_id: str | None = None,
     finished_at: str | None = None,
@@ -18,6 +19,10 @@ def update_run_artifact(
     dashboard_ids: List[str] = [],
     **kwargs,
 ) -> dict:
+    sdk = get_sdk(
+        access_token=request.environ.get("access_token"),
+        looker_sdk_base_url=request.environ.get("looker_sdk_base_url"),
+    )
     key = f"{run_id}"
     previous = sdk.artifact(
         namespace=RUN_NAMESPACE,
@@ -35,14 +40,17 @@ def update_run_artifact(
         body["folder_id"] = folder_id
     if dashboard_ids:
         body["dashboard_ids"] = dashboard_ids
-    if errors:
-        body["errors"] = [*previous.errors, *errors] if previous.errors else errors
     if finished_at:
         body["finished_at"] = finished_at.isoformat()
+        body["status"] = "finished"
     if not finished_at:
         body["status"] = "running"
     if kwargs:
         body.update(kwargs)
+    if errors:
+        body["errors"] = [*previous.errors, *errors] if previous.errors else errors
+    if "errors" in body:
+        body["status"] = "error"
 
     artifact = UpdateArtifact(
         key=key,
@@ -54,6 +62,7 @@ def update_run_artifact(
 
 
 def update_run_dashboard_artifact(
+    request: Request,
     dashboard_id: str,
     run_id: str,
     error: str | None = None,
@@ -61,6 +70,10 @@ def update_run_dashboard_artifact(
     task: RenderTask | None = None,
     **kwargs,
 ) -> dict:
+    sdk = get_sdk(
+        access_token=request.environ.get("access_token"),
+        looker_sdk_base_url=request.environ.get("looker_sdk_base_url"),
+    )
     key = f"{run_id}-{dashboard_id}"
     previous = sdk.artifact(namespace=DASHBOARD_NAMESPACE, key=key)
     body = dict()

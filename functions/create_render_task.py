@@ -1,12 +1,10 @@
 from datetime import datetime, timezone
 
-from looker_sdk import init40
 from looker_sdk.sdk.api40 import models
 from werkzeug import Request
 
 from functions.handle_artifacts import update_run_dashboard_artifact
-
-sdk = init40()
+from functions.utils import get_sdk
 
 
 def create_render_task(request: Request) -> dict:
@@ -19,18 +17,22 @@ def create_render_task(request: Request) -> dict:
         A dictionary containing the status and render_task_id or an error message
     """
     request_json = request.get_json(silent=True)
-    run_id = request_json["run_id"]
+    run_id = request_json.get("run_id")
     if not run_id:
         return "Please provide a run_id in the request body", 400
 
-    dashboard_id = request_json["dashboard_id"]
+    dashboard_id = request_json.get("dashboard_id")
     if not dashboard_id:
         return "Please provide a dashboard_id in the request body", 400
 
     try:
+        sdk = get_sdk(
+            access_token=request.environ.get("access_token"),
+            looker_sdk_base_url=request.environ.get("looker_sdk_base_url"),
+        )
         # Create a render task for the dashboard
         render_task = sdk.create_dashboard_render_task(
-            dashboard_id=request_json["dashboard_id"],
+            dashboard_id=request_json.get("dashboard_id"),
             result_format="pdf",
             width=1920,
             height=1080,
@@ -40,6 +42,7 @@ def create_render_task(request: Request) -> dict:
             body=models.CreateDashboardRenderTask(dashboard_style="tiled"),
         )
         update_run_dashboard_artifact(
+            request=request,
             dashboard_id=dashboard_id,
             run_id=run_id,
             task=render_task,
@@ -47,6 +50,7 @@ def create_render_task(request: Request) -> dict:
         return {"status": "success", "render_task_id": render_task.id}
     except Exception as e:
         update_run_dashboard_artifact(
+            request=request,
             dashboard_id=dashboard_id,
             run_id=run_id,
             error=str(e),

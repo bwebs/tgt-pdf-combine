@@ -3,13 +3,11 @@ import os
 from datetime import datetime, timezone
 
 from google.cloud import storage
-from looker_sdk import init40
 from PyPDF2 import PdfMerger
 from werkzeug import Request
 
 from functions.handle_artifacts import update_run_artifact
-
-sdk = init40()
+from functions.utils import get_sdk
 
 
 def get_and_combine_render_tasks(request: Request) -> dict:
@@ -21,17 +19,17 @@ def get_and_combine_render_tasks(request: Request) -> dict:
     Returns:
         A dictionary containing the status and the combined PDF's blob name or an error message
     """
-
+    sdk = get_sdk(request.environ.get("access_token"))
     request_json = request.get_json(silent=True)
 
-    run_id = request_json["run_id"]
+    run_id = request_json.get("run_id")
     if not run_id:
         return "Please provide run_id in the request body", 400
 
     if not request_json or "render_task_ids" not in request_json:
         return "Please provide render_task_ids in the request body", 400
 
-    folder_name = request_json["folder_name"]
+    folder_name = request_json.get("folder_name")
     if not folder_name:
         return "Please provide folder_name in the request body", 400
 
@@ -44,12 +42,13 @@ def get_and_combine_render_tasks(request: Request) -> dict:
         merger = PdfMerger()
         individual_pdfs = []
 
-        for task_id in request_json["render_task_ids"]:
+        for task_id in request_json.get("render_task_ids", []):
             # Get the render task
             task = sdk.render_task(task_id)
 
             if task.status != "success":  # other option failure
                 update_run_artifact(
+                    request=request,
                     run_id=run_id,
                     errors=[
                         f"Render task {task_id} for dashboard {task.dashboard_id} is not complete. Status: {task.status}"
@@ -68,7 +67,9 @@ def get_and_combine_render_tasks(request: Request) -> dict:
 
             # Create individual PDF blob
             dashboard_id = task.dashboard_id
-            individual_blob_name = f"{folder_name}/wbr-dashboard-{dashboard_id}.pdf"
+            individual_blob_name = (
+                f"{folder_name}/pdf-combiner-dashboard-{dashboard_id}.pdf"
+            )
             individual_blob = bucket.blob(individual_blob_name)
 
             # Upload individual PDF
@@ -79,7 +80,7 @@ def get_and_combine_render_tasks(request: Request) -> dict:
             merger.append(io.BytesIO(results))
 
         # Create a new blob for the combined PDF
-        combined_blob_name = f"{folder_name}/{folder_name}-combined-render-tasks.pdf"
+        combined_blob_name = f"{folder_name}/{folder_name}-combined.pdf"
         combined_blob = bucket.blob(combined_blob_name)
 
         # Write the combined PDF to a bytes buffer
@@ -91,17 +92,18 @@ def get_and_combine_render_tasks(request: Request) -> dict:
         combined_blob.upload_from_file(output_buffer, content_type="application/pdf")
 
         update_run_artifact(
+            request=request,
             run_id=run_id,
             combined_pdf=combined_blob_name,
             individual_pdfs=individual_pdfs,
-            number_of_pdfs_combined=len(individual_pdfs),
+            number_of_pdfs_combined=len(request_json.get("render_task_ids", [])),
             finished_at=datetime.now(timezone.utc),
         )
         return {
             "status": "success",
             "combined_pdf": combined_blob_name,
             "individual_pdfs": individual_pdfs,
-            "number_of_pdfs_combined": len(request_json["render_task_ids"]),
+            "number_of_pdfs_combined": len(request_json.get("render_task_ids", [])),
         }
 
     except Exception as e:
