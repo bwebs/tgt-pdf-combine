@@ -28,6 +28,7 @@ const SelectedRun: React.FC = () => {
       <Grid columns={2} gap="large">
         {current_dashboard_artifact.map((artifact) => (
           <DashboardCard
+            run_id={run_id}
             key={artifact.dashboard_id}
             status={artifact.status}
             dashboard_id={artifact.dashboard_id}

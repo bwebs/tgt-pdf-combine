@@ -25,20 +25,16 @@ def execute_workflow(request: Request) -> Execution:
     if not folder_id:
         return "folder_id is required", 400
 
-    os.environ["GOOGLE_CLOUD_PROJECT_ID"] = "kwhitlow-bi-prod"
-
     # Get the project ID from environment variables
     project_id = os.getenv("GOOGLE_CLOUD_PROJECT_ID")
     if not project_id:
-        return "GOOGLE_CLOUD_PROJECT environment variable is not set", 500
+        return "GOOGLE_CLOUD_PROJECT_ID environment variable is not set", 500
 
     # Get the location from environment variables or use default
     location = os.getenv("WORKFLOW_LOCATION", "us-central1")
 
     # Get the workflow name from environment variables
     workflow_name = os.getenv("WORKFLOW_NAME", "pdf-combiner")
-    if not workflow_name:
-        return "WORKFLOW_NAME environment variable is not set", 500
 
     # Construct the full workflow name
     workflow_path = client.workflow_path(project_id, location, workflow_name)

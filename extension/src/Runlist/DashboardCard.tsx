@@ -15,12 +15,15 @@ import React from "react";
 import styled from "styled-components";
 import useSWR from "swr";
 import { useCore40SDK, useExtensionContext } from "../App";
+import { ITEMS } from "../Config";
 import { swr_sdk_fetcher } from "../utils";
+
 interface DashboardCardProps {
   status?: string;
   dashboard_id: string;
   error?: string;
   finished_at?: string;
+  run_id: string | null;
 }
 
 interface StatusSpanProps {
@@ -67,6 +70,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   dashboard_id,
   error,
   finished_at,
+  run_id,
 }) => {
   const sdk = useCore40SDK();
   const { extensionSDK } = useExtensionContext();
@@ -76,13 +80,29 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   );
 
   const handleDownloadClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
+    if (!run_id) return;
+    const config = await extensionSDK.getContextData();
+    const pdf_combiner_url = config[ITEMS.pdf_combiner_url];
 
-    extensionSDK.openBrowserWindow(
-      `/dashboards/${dashboard_id}/download`,
-      e.shiftKey || e.metaKey ? "_blank" : "_self"
+    const response = await extensionSDK.serverProxy(
+      `${pdf_combiner_url}/?do=get_signed_url`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: extensionSDK.createSecretKeyTag("pdf_combine_secret"),
+        },
+        body: JSON.stringify({
+          run_id,
+          dashboard_id,
+        }),
+      }
     );
+
+    if (response.status === 200) {
+      const signed_url = decodeURIComponent(response.body.signed_url);
+      extensionSDK.openBrowserWindow(signed_url, "_blank");
+    }
   };
 
   if (isLoading) {
@@ -126,7 +146,8 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
           label="Download"
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation();
-            handleDownloadClick();
+            e.preventDefault();
+            handleDownloadClick(e);
           }}
         />
       </StyledCard>
