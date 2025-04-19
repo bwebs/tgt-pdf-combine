@@ -1,0 +1,10 @@
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+* {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
