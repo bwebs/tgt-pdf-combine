@@ -6,6 +6,6 @@ export default defineConfig({
   plugins: [react()],
   base: "./apps/pdf-combiner",
   build: {
-    outDir: "./apps/pdf-combiner",
+    outDir: "./dist/apps/pdf-combiner",
   },
 });
