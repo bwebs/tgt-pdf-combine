@@ -4,6 +4,8 @@ import { defineConfig } from "vite";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/apps/pdf-combiner",
-  appType: "mpa",
+  base: "./apps/pdf-combiner",
+  build: {
+    outDir: "./apps/pdf-combiner",
+  },
 });
